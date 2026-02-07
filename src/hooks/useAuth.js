@@ -134,6 +134,28 @@ export function useAuth() {
     return foundGroup;
   }, [user]);
 
+  const leaveGroup = useCallback(async () => {
+    if (!user || !group) return;
+    const { error } = await supabase
+      .from('group_members')
+      .delete()
+      .eq('group_id', group.id)
+      .eq('user_id', user.id);
+    if (error) throw error;
+    setGroup(null);
+    setMembers([]);
+  }, [user, group]);
+
+  const updateGroupName = useCallback(async (newName) => {
+    if (!group) return;
+    const { error } = await supabase
+      .from('household_groups')
+      .update({ name: newName })
+      .eq('id', group.id);
+    if (error) throw error;
+    setGroup((prev) => ({ ...prev, name: newName }));
+  }, [group]);
+
   return {
     user,
     group,
@@ -144,6 +166,8 @@ export function useAuth() {
     signOut,
     createGroup,
     joinGroup,
+    leaveGroup,
+    updateGroupName,
     isOnline: isSupabaseEnabled(),
   };
 }

@@ -90,6 +90,17 @@ CREATE POLICY "Authenticated users can join groups"
   ON group_members FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+CREATE POLICY "Members can leave groups"
+  ON group_members FOR DELETE
+  USING (auth.uid() = user_id);
+
+-- household_groups: メンバーのみグループ名を更新可能
+CREATE POLICY "Members can update their groups"
+  ON household_groups FOR UPDATE
+  USING (
+    id IN (SELECT group_id FROM group_members WHERE user_id = auth.uid())
+  );
+
 -- expenses: 同グループメンバーのみ CRUD
 CREATE POLICY "Members can view group expenses"
   ON expenses FOR SELECT

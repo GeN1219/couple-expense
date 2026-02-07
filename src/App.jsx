@@ -25,7 +25,7 @@ function LoadingScreen() {
 }
 
 function OnlineApp({ auth }) {
-  const { group, members, signOut } = auth;
+  const { group, members, signOut, leaveGroup, updateGroupName } = auth;
   const data = useSupabaseData(group, members);
   const [currentTab, setCurrentTab] = useState('home');
 
@@ -62,7 +62,7 @@ function OnlineApp({ auth }) {
           <Charts expenses={data.expenses} settings={data.settings} />
         )}
         {currentTab === 'settings' && (
-          <Settings settings={data.settings} onUpdate={data.updateSettings} group={group} onSignOut={signOut} />
+          <Settings settings={data.settings} onUpdate={data.updateSettings} group={group} onSignOut={signOut} onLeaveGroup={leaveGroup} onUpdateGroupName={updateGroupName} />
         )}
       </main>
     </div>

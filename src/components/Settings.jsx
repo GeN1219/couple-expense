@@ -1,12 +1,17 @@
 import { useState } from 'react';
-import { FiPlus, FiTrash2, FiSave, FiLogOut, FiCopy, FiCheck } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiSave, FiLogOut, FiCopy, FiCheck, FiEdit2, FiUserMinus } from 'react-icons/fi';
 
-export default function Settings({ settings, onUpdate, group, onSignOut }) {
+export default function Settings({ settings, onUpdate, group, onSignOut, onLeaveGroup, onUpdateGroupName }) {
   const [users, setUsers] = useState(settings.users);
   const [categories, setCategories] = useState(settings.categories);
   const [newCategory, setNewCategory] = useState('');
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // Group name editing
+  const [editingGroupName, setEditingGroupName] = useState(false);
+  const [groupNameDraft, setGroupNameDraft] = useState(group?.name || '');
+  const [groupNameSaved, setGroupNameSaved] = useState(false);
 
   const handleSave = () => {
     const trimmedUsers = users.map((u) => u.trim()).filter(Boolean);
@@ -38,18 +43,80 @@ export default function Settings({ settings, onUpdate, group, onSignOut }) {
     }
   };
 
+  const handleSaveGroupName = async () => {
+    const name = groupNameDraft.trim();
+    if (!name || !onUpdateGroupName) return;
+    try {
+      await onUpdateGroupName(name);
+      setEditingGroupName(false);
+      setGroupNameSaved(true);
+      setTimeout(() => setGroupNameSaved(false), 2000);
+    } catch (err) {
+      alert('グループ名の変更に失敗しました: ' + err.message);
+    }
+  };
+
+  const handleLeaveGroup = () => {
+    if (!onLeaveGroup) return;
+    if (window.confirm('本当にこのグループから退出しますか？\n退出するとデータにアクセスできなくなります。')) {
+      onLeaveGroup();
+    }
+  };
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
       <h2 className="text-lg font-bold text-brown-dark">設定</h2>
 
       {/* Group info (only when online) */}
       {group && (
-        <div className="bg-white rounded-xl p-4 border border-beige shadow-sm">
-          <h3 className="text-sm font-bold text-brown-dark mb-3">家計簿グループ</h3>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-warm-gray">グループ名</span>
-            <span className="text-sm font-medium text-brown-dark">{group.name}</span>
+        <div className="bg-white rounded-xl p-4 border border-beige shadow-sm space-y-3">
+          <h3 className="text-sm font-bold text-brown-dark">家計簿グループ</h3>
+
+          {/* Group name - view / edit */}
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-warm-gray">グループ名</span>
+              {!editingGroupName ? (
+                <div className="flex items-center gap-1">
+                  <span className="text-sm font-medium text-brown-dark">
+                    {groupNameSaved ? '✓ 変更しました' : group.name}
+                  </span>
+                  {onUpdateGroupName && (
+                    <button
+                      onClick={() => { setGroupNameDraft(group.name); setEditingGroupName(true); }}
+                      className="p-1 rounded-lg text-warm-gray hover:bg-cream hover:text-brown transition-colors"
+                    >
+                      <FiEdit2 className="text-xs" />
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="text"
+                    value={groupNameDraft}
+                    onChange={(e) => setGroupNameDraft(e.target.value)}
+                    className="w-32 px-2 py-1 rounded-lg border border-beige text-sm text-brown-dark focus:outline-none focus:ring-2 focus:ring-beige-dark/50"
+                    autoFocus
+                  />
+                  <button
+                    onClick={handleSaveGroupName}
+                    className="p-1.5 rounded-lg bg-accent-green text-white hover:bg-accent-green/80 transition-colors"
+                  >
+                    <FiCheck className="text-xs" />
+                  </button>
+                  <button
+                    onClick={() => setEditingGroupName(false)}
+                    className="p-1.5 rounded-lg bg-warm-gray/20 text-warm-gray hover:bg-warm-gray/30 transition-colors"
+                  >
+                    <FiTrash2 className="text-xs" />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
+
+          {/* Invite code */}
           <div className="flex items-center justify-between">
             <span className="text-sm text-warm-gray">招待コード</span>
             <button
@@ -145,14 +212,26 @@ export default function Settings({ settings, onUpdate, group, onSignOut }) {
         )}
       </button>
 
-      {/* Logout (only when online) */}
-      {onSignOut && (
-        <button
-          onClick={onSignOut}
-          className="w-full py-3 rounded-xl border-2 border-danger/30 text-danger font-bold text-sm hover:bg-danger/5 transition-colors flex items-center justify-center gap-2"
-        >
-          <FiLogOut /> ログアウト
-        </button>
+      {/* Account actions (only when online) */}
+      {(onSignOut || onLeaveGroup) && (
+        <div className="space-y-2 pt-2">
+          {onLeaveGroup && (
+            <button
+              onClick={handleLeaveGroup}
+              className="w-full py-3 rounded-xl border-2 border-beige text-warm-gray font-bold text-sm hover:bg-cream hover:text-brown transition-colors flex items-center justify-center gap-2"
+            >
+              <FiUserMinus /> グループから退出
+            </button>
+          )}
+          {onSignOut && (
+            <button
+              onClick={onSignOut}
+              className="w-full py-3 rounded-xl border-2 border-danger/30 text-danger font-bold text-sm hover:bg-danger/5 transition-colors flex items-center justify-center gap-2"
+            >
+              <FiLogOut /> ログアウト
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
