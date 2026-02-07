@@ -12,6 +12,7 @@ import ExpenseList from './components/ExpenseList';
 import Settlement from './components/Settlement';
 import Charts from './components/Charts';
 import Settings from './components/Settings';
+import InstallPrompt from './components/InstallPrompt';
 
 function LoadingScreen() {
   return (
@@ -38,6 +39,7 @@ function OnlineApp({ auth }) {
 
   return (
     <div className="font-sans pb-20 min-h-screen">
+      <InstallPrompt />
       <Header currentTab={currentTab} onTabChange={setCurrentTab} />
       <main>
         {currentTab === 'home' && (
@@ -80,6 +82,7 @@ function OfflineApp() {
 
   return (
     <div className="font-sans pb-20 min-h-screen">
+      <InstallPrompt />
       <Header currentTab={currentTab} onTabChange={setCurrentTab} />
       <main>
         {currentTab === 'home' && (
