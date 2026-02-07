@@ -70,61 +70,63 @@ export default function ExpenseList({ expenses, settings, onEdit, onDelete, onTo
             editingId === expense.id ? (
               <div
                 key={expense.id}
-                className="bg-white rounded-xl p-3 border border-beige shadow-sm space-y-2"
+                className="bg-white rounded-xl p-3 border border-beige shadow-sm space-y-2 overflow-hidden"
               >
-                <div className="flex gap-2">
+                <div className="flex gap-2 min-w-0">
                   <input
                     type="date"
                     value={editForm.date}
                     onChange={(e) => setEditForm((p) => ({ ...p, date: e.target.value }))}
-                    className="flex-1 px-2 py-1.5 rounded-lg border border-beige text-sm"
+                    className="flex-1 min-w-0 px-2 py-1.5 rounded-lg border border-beige text-sm"
                   />
                   <select
                     value={editForm.payer}
                     onChange={(e) => setEditForm((p) => ({ ...p, payer: e.target.value }))}
-                    className="px-2 py-1.5 rounded-lg border border-beige text-sm bg-white"
+                    className="shrink-0 w-auto max-w-[40%] px-2 py-1.5 rounded-lg border border-beige text-sm bg-white"
                   >
                     {settings.users.map((u) => (
                       <option key={u} value={u}>{u}</option>
                     ))}
                   </select>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 min-w-0">
                   <input
                     type="text"
                     value={editForm.item}
                     onChange={(e) => setEditForm((p) => ({ ...p, item: e.target.value }))}
-                    className="flex-1 px-2 py-1.5 rounded-lg border border-beige text-sm"
+                    className="flex-1 min-w-0 px-2 py-1.5 rounded-lg border border-beige text-sm"
                   />
                   <input
                     type="number"
                     value={editForm.amount}
                     onChange={(e) => setEditForm((p) => ({ ...p, amount: e.target.value }))}
-                    className="w-24 px-2 py-1.5 rounded-lg border border-beige text-sm"
+                    className="shrink-0 w-20 px-2 py-1.5 rounded-lg border border-beige text-sm"
                   />
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 min-w-0 flex-wrap">
                   <select
                     value={editForm.category}
                     onChange={(e) => setEditForm((p) => ({ ...p, category: e.target.value }))}
-                    className="flex-1 px-2 py-1.5 rounded-lg border border-beige text-sm bg-white"
+                    className="flex-1 min-w-0 px-2 py-1.5 rounded-lg border border-beige text-sm bg-white"
                   >
                     {settings.categories.map((c) => (
                       <option key={c} value={c}>{c}</option>
                     ))}
                   </select>
-                  <button
-                    onClick={saveEdit}
-                    className="px-3 py-1.5 bg-accent-green text-white rounded-lg text-sm flex items-center gap-1"
-                  >
-                    <FiCheck /> 保存
-                  </button>
-                  <button
-                    onClick={cancelEdit}
-                    className="px-3 py-1.5 bg-warm-gray text-white rounded-lg text-sm flex items-center gap-1"
-                  >
-                    <FiX /> 取消
-                  </button>
+                  <div className="flex gap-2 shrink-0">
+                    <button
+                      onClick={saveEdit}
+                      className="px-3 py-1.5 bg-accent-green text-white rounded-lg text-sm flex items-center gap-1"
+                    >
+                      <FiCheck /> 保存
+                    </button>
+                    <button
+                      onClick={cancelEdit}
+                      className="px-3 py-1.5 bg-warm-gray text-white rounded-lg text-sm flex items-center gap-1"
+                    >
+                      <FiX /> 取消
+                    </button>
+                  </div>
                 </div>
               </div>
             ) : (

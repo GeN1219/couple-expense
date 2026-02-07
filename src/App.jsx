@@ -11,6 +11,7 @@ import ExpenseForm from './components/ExpenseForm';
 import ExpenseList from './components/ExpenseList';
 import Settlement from './components/Settlement';
 import Charts from './components/Charts';
+import Calendar from './components/Calendar';
 import Settings from './components/Settings';
 import InstallPrompt from './components/InstallPrompt';
 
@@ -57,6 +58,9 @@ function OnlineApp({ auth }) {
             />
           </>
         )}
+        {currentTab === 'calendar' && (
+          <Calendar expenses={data.expenses} settings={data.settings} />
+        )}
         {currentTab === 'settle' && (
           <Settlement expenses={data.expenses} settings={data.settings} onToggleSettle={data.toggleSettle} onSettle={data.settle} />
         )}
@@ -99,6 +103,9 @@ function OfflineApp() {
               onToggleSettle={toggleSettle}
             />
           </>
+        )}
+        {currentTab === 'calendar' && (
+          <Calendar expenses={expenses} settings={settings} />
         )}
         {currentTab === 'settle' && (
           <Settlement expenses={expenses} settings={settings} onToggleSettle={toggleSettle} onSettle={settle} />

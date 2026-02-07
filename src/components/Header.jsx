@@ -1,8 +1,9 @@
-import { FiHome, FiPlusCircle, FiDollarSign, FiBarChart2, FiSettings } from 'react-icons/fi';
+import { FiHome, FiPlusCircle, FiDollarSign, FiBarChart2, FiCalendar, FiSettings } from 'react-icons/fi';
 
 const tabs = [
   { id: 'home', label: 'ホーム', icon: FiHome },
   { id: 'add', label: '追加', icon: FiPlusCircle },
+  { id: 'calendar', label: 'カレンダー', icon: FiCalendar },
   { id: 'settle', label: '精算', icon: FiDollarSign },
   { id: 'chart', label: 'グラフ', icon: FiBarChart2 },
   { id: 'settings', label: '設定', icon: FiSettings },
@@ -36,8 +37,8 @@ export default function Header({ currentTab, onTabChange }) {
                     : 'text-warm-gray hover:text-brown'
                 }`}
               >
-                <Icon className={`text-xl mb-0.5 ${isActive ? 'scale-110' : ''} transition-transform`} />
-                <span className={`text-[10px] ${isActive ? 'font-bold' : ''}`}>{tab.label}</span>
+                <Icon className={`text-lg mb-0.5 ${isActive ? 'scale-110' : ''} transition-transform`} />
+                <span className={`text-[9px] ${isActive ? 'font-bold' : ''}`}>{tab.label}</span>
               </button>
             );
           })}
