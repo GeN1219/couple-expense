@@ -198,8 +198,8 @@ export default function Charts({ expenses, settings }) {
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={payerData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="#E8D7C3" />
-                <XAxis type="number" tickFormatter={(v) => `¥${formatCurrency(v)}`} tick={{ fontSize: 11, fill: '#8B7355' }} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 12, fill: '#6B5740' }} width={80} />
+                <XAxis type="number" tickFormatter={(v) => `¥${formatCurrency(v)}`} tick={{ fontSize: 10, fill: '#8B7355' }} />
+                <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: '#6B5740' }} width={60} />
                 <Tooltip content={<CustomTooltip />} />
                 <Bar dataKey="value" radius={[0, 8, 8, 0]}>
                   {payerData.map((_, i) => (
@@ -237,8 +237,8 @@ export default function Charts({ expenses, settings }) {
               <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={monthly.data}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E8D7C3" />
-                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#8B7355' }} />
-                  <YAxis tickFormatter={(v) => `¥${formatCurrency(v)}`} tick={{ fontSize: 11, fill: '#8B7355' }} />
+                  <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#8B7355' }} />
+                  <YAxis tickFormatter={(v) => `¥${formatCurrency(v)}`} tick={{ fontSize: 10, fill: '#8B7355' }} width={50} />
                   <Tooltip content={<MultiLineTooltip />} />
 
                   {/* Total line */}
