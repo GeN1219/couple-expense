@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { FiPlusCircle } from 'react-icons/fi';
+import { toLocalDateStr } from '../utils/calc';
 
 function todayString() {
-  const d = new Date();
-  return d.toISOString().slice(0, 10);
+  // ローカル時間で「今日」を返す（toISOString だと深夜帯に前日になるため）
+  return toLocalDateStr(new Date());
 }
 
 export default function ExpenseForm({ settings, onAdd }) {

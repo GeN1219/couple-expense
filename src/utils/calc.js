@@ -99,6 +99,15 @@ export function getPayerData(expenses, users) {
   return Object.entries(payerMap).map(([name, value]) => ({ name, value }));
 }
 
+// ローカル時間（端末のタイムゾーン）のまま YYYY-MM-DD 文字列を作る。
+// toISOString() は UTC へ変換するため日本時間(UTC+9)では日付が1日ずれる。
+export function toLocalDateStr(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 export function filterByPeriod(expenses, period) {
   const now = new Date();
   const year = now.getFullYear();
@@ -106,17 +115,17 @@ export function filterByPeriod(expenses, period) {
 
   switch (period) {
     case 'this-month': {
-      const start = new Date(year, month, 1).toISOString().slice(0, 10);
-      const end = new Date(year, month + 1, 0).toISOString().slice(0, 10);
+      const start = toLocalDateStr(new Date(year, month, 1));
+      const end = toLocalDateStr(new Date(year, month + 1, 0));
       return expenses.filter((e) => e.date >= start && e.date <= end);
     }
     case 'last-month': {
-      const start = new Date(year, month - 1, 1).toISOString().slice(0, 10);
-      const end = new Date(year, month, 0).toISOString().slice(0, 10);
+      const start = toLocalDateStr(new Date(year, month - 1, 1));
+      const end = toLocalDateStr(new Date(year, month, 0));
       return expenses.filter((e) => e.date >= start && e.date <= end);
     }
     case 'last-3-months': {
-      const start = new Date(year, month - 2, 1).toISOString().slice(0, 10);
+      const start = toLocalDateStr(new Date(year, month - 2, 1));
       return expenses.filter((e) => e.date >= start);
     }
     case 'all':
