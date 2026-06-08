@@ -87,6 +87,9 @@ export default function ExpenseList({ expenses, settings, onEdit, onDelete, onTo
                     {settings.users.map((u) => (
                       <option key={u} value={u}>{u}</option>
                     ))}
+                    {settings.users.map((u) => (
+                      <option key={`${u}のみ`} value={`${u}のみ`}>{u}のみ</option>
+                    ))}
                   </select>
                 </div>
                 <div className="flex gap-2 min-w-0">
@@ -148,6 +151,11 @@ export default function ExpenseList({ expenses, settings, onEdit, onDelete, onTo
                     <span className="text-xs px-1.5 py-0.5 rounded-full bg-cream-dark text-brown font-medium">
                       {expense.payer}
                     </span>
+                    {expense.payer.endsWith('のみ') && (
+                      <span className="text-xs px-1.5 py-0.5 rounded-full bg-brown/10 text-brown font-medium">
+                        個人
+                      </span>
+                    )}
                     <span className="text-xs px-1.5 py-0.5 rounded-full bg-cream text-warm-gray">
                       {expense.category}
                     </span>

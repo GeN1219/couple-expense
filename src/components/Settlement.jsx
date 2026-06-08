@@ -144,6 +144,11 @@ export default function Settlement({ expenses, settings, onToggleSettle, onSettl
                     <span className="text-xs px-1.5 py-0.5 rounded-full bg-cream-dark text-brown font-medium">
                       {expense.payer}
                     </span>
+                    {expense.payer.endsWith('のみ') && (
+                      <span className="text-xs px-1.5 py-0.5 rounded-full bg-brown/10 text-brown font-medium">
+                        個人
+                      </span>
+                    )}
                     <span className="text-xs px-1.5 py-0.5 rounded-full bg-cream text-warm-gray">
                       {expense.category}
                     </span>

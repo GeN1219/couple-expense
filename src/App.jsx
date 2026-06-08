@@ -59,7 +59,13 @@ function OnlineApp({ auth }) {
           </>
         )}
         {currentTab === 'calendar' && (
-          <Calendar expenses={data.expenses} settings={data.settings} />
+          <Calendar
+            expenses={data.expenses}
+            settings={data.settings}
+            onAdd={data.addExpense}
+            onEdit={data.editExpense}
+            onDelete={data.removeExpense}
+          />
         )}
         {currentTab === 'settle' && (
           <Settlement expenses={data.expenses} settings={data.settings} onToggleSettle={data.toggleSettle} onSettle={data.settle} />
@@ -105,7 +111,13 @@ function OfflineApp() {
           </>
         )}
         {currentTab === 'calendar' && (
-          <Calendar expenses={expenses} settings={settings} />
+          <Calendar
+            expenses={expenses}
+            settings={settings}
+            onAdd={addExpense}
+            onEdit={editExpense}
+            onDelete={removeExpense}
+          />
         )}
         {currentTab === 'settle' && (
           <Settlement expenses={expenses} settings={settings} onToggleSettle={toggleSettle} onSettle={settle} />

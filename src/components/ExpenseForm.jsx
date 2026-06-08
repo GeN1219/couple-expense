@@ -53,7 +53,7 @@ export default function ExpenseForm({ settings, onAdd }) {
         {/* Payer */}
         <div>
           <label className="block text-sm font-medium text-brown mb-1">支払った人</label>
-          <div className="flex gap-2">
+          <div className="flex gap-2 mb-2">
             {settings.users.map((user) => (
               <button
                 key={user}
@@ -66,6 +66,23 @@ export default function ExpenseForm({ settings, onAdd }) {
                 }`}
               >
                 {user}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-warm-gray mb-1.5">個人の支出（割り勘対象外）</p>
+          <div className="flex gap-2">
+            {settings.users.map((user) => (
+              <button
+                key={`${user}のみ`}
+                type="button"
+                onClick={() => setForm((prev) => ({ ...prev, payer: `${user}のみ` }))}
+                className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  form.payer === `${user}のみ`
+                    ? 'bg-brown text-white shadow-md'
+                    : 'bg-white border border-beige-dark/40 text-brown/60 hover:bg-cream'
+                }`}
+              >
+                {user}のみ
               </button>
             ))}
           </div>

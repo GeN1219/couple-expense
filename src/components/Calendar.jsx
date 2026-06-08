@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { FiChevronLeft, FiChevronRight, FiX } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiX, FiPlusCircle, FiEdit2, FiTrash2, FiCheck } from 'react-icons/fi';
 import { formatCurrency } from '../utils/calc';
 
 const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
@@ -16,11 +16,131 @@ function toDateStr(year, month, day) {
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
-export default function Calendar({ expenses, settings }) {
+function DayExpenseForm({ date, settings, initialValues, mode, onSubmit, onCancel }) {
+  const [form, setForm] = useState(
+    initialValues || {
+      payer: settings.users[0] || '',
+      item: '',
+      amount: '',
+      category: settings.categories[0] || '',
+    }
+  );
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const amount = parseInt(form.amount, 10);
+    if (!form.item.trim() || !amount || amount <= 0) return;
+    onSubmit({ ...form, item: form.item.trim(), amount });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="px-4 py-3 bg-cream/50 border-b border-beige/50 space-y-2.5">
+      {/* Payer */}
+      <div>
+        <p className="text-xs text-warm-gray mb-1">支払った人</p>
+        <div className="flex gap-1.5 mb-1.5">
+          {settings.users.map((user) => (
+            <button
+              key={user}
+              type="button"
+              onClick={() => setForm((p) => ({ ...p, payer: user }))}
+              className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                form.payer === user
+                  ? 'bg-beige-dark text-white shadow-sm'
+                  : 'bg-white border border-beige text-brown hover:bg-cream'
+              }`}
+            >
+              {user}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-1.5">
+          {settings.users.map((user) => (
+            <button
+              key={`${user}のみ`}
+              type="button"
+              onClick={() => setForm((p) => ({ ...p, payer: `${user}のみ` }))}
+              className={`flex-1 py-1 rounded-lg text-xs font-medium transition-all ${
+                form.payer === `${user}のみ`
+                  ? 'bg-brown text-white shadow-sm'
+                  : 'bg-white border border-beige-dark/40 text-brown/60 hover:bg-cream'
+              }`}
+            >
+              {user}のみ
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Item + Amount */}
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={form.item}
+          onChange={(e) => setForm((p) => ({ ...p, item: e.target.value }))}
+          placeholder="項目名"
+          className="flex-1 min-w-0 px-2.5 py-1.5 rounded-lg border border-beige text-sm bg-white text-brown-dark placeholder-warm-gray/60 focus:outline-none focus:ring-1 focus:ring-beige-dark/50"
+        />
+        <div className="relative shrink-0 w-24">
+          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-warm-gray text-xs">¥</span>
+          <input
+            type="number"
+            inputMode="numeric"
+            value={form.amount}
+            onChange={(e) => setForm((p) => ({ ...p, amount: e.target.value }))}
+            placeholder="0"
+            min="1"
+            className="w-full pl-6 pr-2 py-1.5 rounded-lg border border-beige text-sm bg-white text-brown-dark placeholder-warm-gray/60 focus:outline-none focus:ring-1 focus:ring-beige-dark/50"
+          />
+        </div>
+      </div>
+
+      {/* Category */}
+      <div className="flex flex-wrap gap-1.5">
+        {settings.categories.map((cat) => (
+          <button
+            key={cat}
+            type="button"
+            onClick={() => setForm((p) => ({ ...p, category: cat }))}
+            className={`px-2.5 py-1 rounded-full text-xs transition-all ${
+              form.category === cat
+                ? 'bg-beige-dark text-white shadow-sm'
+                : 'bg-white border border-beige text-brown hover:bg-cream'
+            }`}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
+
+      {/* Actions */}
+      <div className="flex gap-2 pt-0.5">
+        <button
+          type="submit"
+          className="flex-1 py-1.5 rounded-lg bg-beige-dark text-white text-xs font-bold flex items-center justify-center gap-1 hover:bg-brown transition-colors"
+        >
+          <FiCheck />
+          {mode === 'add' ? '追加する' : '保存する'}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-3 py-1.5 rounded-lg bg-cream border border-beige text-warm-gray text-xs hover:bg-cream-dark transition-colors"
+        >
+          キャンセル
+        </button>
+      </div>
+    </form>
+  );
+}
+
+export default function Calendar({ expenses, settings, onAdd, onEdit, onDelete }) {
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth());
   const [selectedDate, setSelectedDate] = useState(null);
+  const [formMode, setFormMode] = useState(null); // null | 'add' | 'edit'
+  const [editingExpense, setEditingExpense] = useState(null);
 
   // Build a map: dateStr -> { total, items }
   const dateMap = useMemo(() => {
@@ -42,23 +162,69 @@ export default function Calendar({ expenses, settings }) {
     if (month === 0) { setYear(year - 1); setMonth(11); }
     else setMonth(month - 1);
     setSelectedDate(null);
+    setFormMode(null);
   };
 
   const nextMonth = () => {
     if (month === 11) { setYear(year + 1); setMonth(0); }
     else setMonth(month + 1);
     setSelectedDate(null);
+    setFormMode(null);
   };
 
   const goToday = () => {
     setYear(today.getFullYear());
     setMonth(today.getMonth());
     setSelectedDate(null);
+    setFormMode(null);
+  };
+
+  const selectDate = (dateStr, isSelected) => {
+    setSelectedDate(isSelected ? null : dateStr);
+    setFormMode(null);
+    setEditingExpense(null);
+  };
+
+  const closePanel = () => {
+    setSelectedDate(null);
+    setFormMode(null);
+    setEditingExpense(null);
+  };
+
+  const openAddForm = () => {
+    setEditingExpense(null);
+    setFormMode('add');
+  };
+
+  const openEditForm = (exp) => {
+    setEditingExpense(exp);
+    setFormMode('edit');
+  };
+
+  const cancelForm = () => {
+    setFormMode(null);
+    setEditingExpense(null);
+  };
+
+  const handleAdd = (fields) => {
+    onAdd({ date: selectedDate, ...fields });
+    setFormMode(null);
+  };
+
+  const handleEdit = (fields) => {
+    onEdit(editingExpense.id, fields);
+    setFormMode(null);
+    setEditingExpense(null);
+  };
+
+  const handleDelete = (id) => {
+    if (window.confirm('この支出を削除しますか？')) {
+      onDelete(id);
+    }
   };
 
   // Build calendar grid cells
   const cells = [];
-  // Empty cells before first day
   for (let i = 0; i < firstDay; i++) {
     cells.push(null);
   }
@@ -134,7 +300,7 @@ export default function Calendar({ expenses, settings }) {
           return (
             <button
               key={day}
-              onClick={() => setSelectedDate(isSelected ? null : dateStr)}
+              onClick={() => selectDate(dateStr, isSelected)}
               className={`min-h-[3.5rem] p-1 flex flex-col items-center justify-start transition-colors ${
                 isSelected
                   ? 'bg-beige-dark/30'
@@ -166,43 +332,108 @@ export default function Calendar({ expenses, settings }) {
         })}
       </div>
 
-      {/* Selected date detail modal */}
+      {/* Selected date detail panel */}
       {selectedDate && (
         <div className="mt-4 bg-white rounded-xl border border-beige shadow-sm overflow-hidden">
+          {/* Panel header */}
           <div className="flex items-center justify-between px-4 py-3 bg-cream-dark/50 border-b border-beige/50">
             <h3 className="text-sm font-bold text-brown-dark">
               {selectedDate.replace(/-/g, '/')} の支出
             </h3>
-            <button
-              onClick={() => setSelectedDate(null)}
-              className="p-1 rounded-lg hover:bg-cream transition-colors text-warm-gray"
-            >
-              <FiX className="text-sm" />
-            </button>
+            <div className="flex items-center gap-1">
+              {onAdd && formMode === null && (
+                <button
+                  onClick={openAddForm}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-beige-dark text-white text-xs font-medium hover:bg-brown transition-colors"
+                >
+                  <FiPlusCircle className="text-sm" />
+                  追加
+                </button>
+              )}
+              <button
+                onClick={closePanel}
+                className="p-1 rounded-lg hover:bg-cream transition-colors text-warm-gray ml-1"
+              >
+                <FiX className="text-sm" />
+              </button>
+            </div>
           </div>
+
+          {/* Add form */}
+          {formMode === 'add' && (
+            <DayExpenseForm
+              date={selectedDate}
+              settings={settings}
+              mode="add"
+              onSubmit={handleAdd}
+              onCancel={cancelForm}
+            />
+          )}
+
+          {/* Expense list */}
           {selectedData && selectedData.items.length > 0 ? (
             <div className="divide-y divide-beige/30">
               {selectedData.items.map((exp) => (
-                <div key={exp.id} className="px-4 py-3 flex items-center gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      <span className="text-xs px-1.5 py-0.5 rounded-full bg-cream-dark text-brown font-medium">
-                        {exp.payer}
+                <div key={exp.id}>
+                  {/* Edit form for this item */}
+                  {formMode === 'edit' && editingExpense?.id === exp.id ? (
+                    <DayExpenseForm
+                      date={selectedDate}
+                      settings={settings}
+                      mode="edit"
+                      initialValues={{
+                        payer: exp.payer,
+                        item: exp.item,
+                        amount: String(exp.amount),
+                        category: exp.category,
+                      }}
+                      onSubmit={handleEdit}
+                      onCancel={cancelForm}
+                    />
+                  ) : (
+                    <div className="px-4 py-3 flex items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <span className="text-xs px-1.5 py-0.5 rounded-full bg-cream-dark text-brown font-medium">
+                            {exp.payer}
+                          </span>
+                          {exp.payer.endsWith('のみ') && (
+                            <span className="text-xs px-1.5 py-0.5 rounded-full bg-brown/10 text-brown font-medium">
+                              個人
+                            </span>
+                          )}
+                          <span className="text-xs px-1.5 py-0.5 rounded-full bg-cream text-warm-gray">
+                            {exp.category}
+                          </span>
+                          {exp.settled && (
+                            <span className="text-xs px-1.5 py-0.5 rounded-full bg-accent-green/20 text-accent-green font-medium">
+                              精算済
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-sm text-brown-dark truncate block">{exp.item}</span>
+                      </div>
+                      <span className="text-sm font-bold text-brown-dark whitespace-nowrap">
+                        ¥{formatCurrency(exp.amount)}
                       </span>
-                      <span className="text-xs px-1.5 py-0.5 rounded-full bg-cream text-warm-gray">
-                        {exp.category}
-                      </span>
-                      {exp.settled && (
-                        <span className="text-xs px-1.5 py-0.5 rounded-full bg-accent-green/20 text-accent-green font-medium">
-                          精算済
-                        </span>
+                      {!exp.settled && onEdit && onDelete && formMode === null && (
+                        <div className="flex gap-1 shrink-0">
+                          <button
+                            onClick={() => openEditForm(exp)}
+                            className="p-1.5 rounded-lg text-warm-gray hover:bg-cream-dark hover:text-brown transition-colors"
+                          >
+                            <FiEdit2 className="text-xs" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(exp.id)}
+                            className="p-1.5 rounded-lg text-warm-gray hover:bg-danger/10 hover:text-danger transition-colors"
+                          >
+                            <FiTrash2 className="text-xs" />
+                          </button>
+                        </div>
                       )}
                     </div>
-                    <span className="text-sm text-brown-dark truncate block">{exp.item}</span>
-                  </div>
-                  <span className="text-sm font-bold text-brown-dark whitespace-nowrap">
-                    ¥{formatCurrency(exp.amount)}
-                  </span>
+                  )}
                 </div>
               ))}
               <div className="px-4 py-2.5 bg-cream/50 flex justify-between items-center">
@@ -213,10 +444,12 @@ export default function Calendar({ expenses, settings }) {
               </div>
             </div>
           ) : (
-            <div className="text-center py-8 text-warm-gray">
-              <p className="text-2xl mb-1">📭</p>
-              <p className="text-sm">この日の支出はありません</p>
-            </div>
+            formMode !== 'add' && (
+              <div className="text-center py-8 text-warm-gray">
+                <p className="text-2xl mb-1">📭</p>
+                <p className="text-sm">この日の支出はありません</p>
+              </div>
+            )
           )}
         </div>
       )}
