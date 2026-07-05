@@ -152,3 +152,64 @@ CREATE POLICY "Members can delete categories"
 ALTER PUBLICATION supabase_realtime ADD TABLE expenses;
 ALTER PUBLICATION supabase_realtime ADD TABLE categories;
 ALTER PUBLICATION supabase_realtime ADD TABLE group_members;
+
+-- ========================================
+-- 固定費（毎月の定期支出）機能  ※既存DBに後から適用する追加分
+-- この節は冪等（何度実行してもOK）に書いてあります
+-- ========================================
+
+-- 7. 固定費ルール
+CREATE TABLE IF NOT EXISTS recurring_expenses (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  group_id UUID NOT NULL REFERENCES household_groups(id) ON DELETE CASCADE,
+  day INTEGER NOT NULL CHECK (day BETWEEN 1 AND 31),
+  payer TEXT NOT NULL,
+  item TEXT NOT NULL,
+  amount INTEGER NOT NULL CHECK (amount > 0),
+  category TEXT NOT NULL,
+  start_ym TEXT NOT NULL,          -- 生成開始月 'YYYY-MM'
+  active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- expenses に「どの固定費が・どの月分を」生成したかのマーカー列を追加
+ALTER TABLE expenses ADD COLUMN IF NOT EXISTS recurring_id UUID
+  REFERENCES recurring_expenses(id) ON DELETE SET NULL;
+ALTER TABLE expenses ADD COLUMN IF NOT EXISTS recurring_month TEXT;  -- 'YYYY-MM'
+
+-- 重複生成防止: 同じルール×同じ月は1件だけ（二人同時起動でも安全）
+CREATE UNIQUE INDEX IF NOT EXISTS idx_expenses_recurring_unique
+  ON expenses(recurring_id, recurring_month)
+  WHERE recurring_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_recurring_group_id ON recurring_expenses(group_id);
+
+-- RLS
+ALTER TABLE recurring_expenses ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Members can view recurring" ON recurring_expenses;
+CREATE POLICY "Members can view recurring"
+  ON recurring_expenses FOR SELECT
+  USING (group_id IN (SELECT group_id FROM group_members WHERE user_id = auth.uid()));
+
+DROP POLICY IF EXISTS "Members can insert recurring" ON recurring_expenses;
+CREATE POLICY "Members can insert recurring"
+  ON recurring_expenses FOR INSERT
+  WITH CHECK (group_id IN (SELECT group_id FROM group_members WHERE user_id = auth.uid()));
+
+DROP POLICY IF EXISTS "Members can update recurring" ON recurring_expenses;
+CREATE POLICY "Members can update recurring"
+  ON recurring_expenses FOR UPDATE
+  USING (group_id IN (SELECT group_id FROM group_members WHERE user_id = auth.uid()));
+
+DROP POLICY IF EXISTS "Members can delete recurring" ON recurring_expenses;
+CREATE POLICY "Members can delete recurring"
+  ON recurring_expenses FOR DELETE
+  USING (group_id IN (SELECT group_id FROM group_members WHERE user_id = auth.uid()));
+
+-- Realtime（既に追加済みならエラーになるので個別に握りつぶす）
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE recurring_expenses;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;

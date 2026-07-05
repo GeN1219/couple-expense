@@ -1,6 +1,7 @@
 const STORAGE_KEYS = {
   SETTINGS: 'couple-expense-settings',
   EXPENSES: 'couple-expense-expenses',
+  RECURRING: 'couple-expense-recurring',
 };
 
 const DEFAULT_SETTINGS = {
@@ -86,4 +87,47 @@ export function settleExpenses(ids) {
     }
   }
   saveExpenses(expenses);
+}
+
+// ===== 固定費（定期支出ルール） =====
+
+export function getRecurring() {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.RECURRING);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveRecurring(rules) {
+  localStorage.setItem(STORAGE_KEYS.RECURRING, JSON.stringify(rules));
+}
+
+export function addRecurring(rule) {
+  const rules = getRecurring();
+  const newRule = {
+    ...rule,
+    id: crypto.randomUUID(),
+    active: rule.active ?? true,
+    createdAt: new Date().toISOString(),
+  };
+  rules.push(newRule);
+  saveRecurring(rules);
+  return newRule;
+}
+
+export function updateRecurring(id, updates) {
+  const rules = getRecurring();
+  const index = rules.findIndex((r) => r.id === id);
+  if (index !== -1) {
+    rules[index] = { ...rules[index], ...updates };
+    saveRecurring(rules);
+    return rules[index];
+  }
+  return null;
+}
+
+export function deleteRecurring(id) {
+  saveRecurring(getRecurring().filter((r) => r.id !== id));
 }

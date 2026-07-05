@@ -1,9 +1,10 @@
-import { FiHome, FiPlusCircle, FiDollarSign, FiBarChart2, FiCalendar, FiSettings } from 'react-icons/fi';
+import { FiHome, FiPlusCircle, FiDollarSign, FiBarChart2, FiCalendar, FiRepeat, FiSettings } from 'react-icons/fi';
 
 const tabs = [
   { id: 'home', label: 'ホーム', icon: FiHome },
   { id: 'add', label: '追加', icon: FiPlusCircle },
   { id: 'calendar', label: 'カレンダー', icon: FiCalendar },
+  { id: 'recurring', label: '固定費', icon: FiRepeat },
   { id: 'settle', label: '精算', icon: FiDollarSign },
   { id: 'chart', label: 'グラフ', icon: FiBarChart2 },
   { id: 'settings', label: '設定', icon: FiSettings },

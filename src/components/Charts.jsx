@@ -4,7 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   LineChart, Line,
 } from 'recharts';
-import { FiCheck } from 'react-icons/fi';
+import { FiCheck, FiChevronRight } from 'react-icons/fi';
 import { getCategoryData, getPayerData, getMonthlyData, filterByPeriod, formatCurrency } from '../utils/calc';
 
 const COLORS = ['#D4B896', '#E8A0BF', '#A8C5A0', '#A0BFE0', '#E8C5A0', '#C5A0E0', '#C4A67A', '#8B7355'];
@@ -83,6 +83,28 @@ export default function Charts({ expenses, settings }) {
   const monthly = useMemo(() => getMonthlyData(expenses), [expenses]);
 
   const totalAmount = filtered.reduce((s, e) => s + e.amount, 0);
+
+  // カテゴリ明細のタップ展開
+  const [expandedCats, setExpandedCats] = useState(() => new Set());
+  const toggleExpanded = useCallback((cat) => {
+    setExpandedCats((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat); else next.add(cat);
+      return next;
+    });
+  }, []);
+
+  // カテゴリ→その期間の個別支出（日付降順）
+  const expensesByCategory = useMemo(() => {
+    const map = {};
+    for (const e of filtered) {
+      (map[e.category] ||= []).push(e);
+    }
+    for (const k of Object.keys(map)) {
+      map[k].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+    }
+    return map;
+  }, [filtered]);
 
   // Category visibility for monthly chart
   const [visibleCategories, setVisibleCategories] = useState(null);
@@ -190,6 +212,58 @@ export default function Charts({ expenses, settings }) {
                 />
               </PieChart>
             </ResponsiveContainer>
+          </div>
+
+          {/* Category breakdown table (tap to expand details) */}
+          <div className="bg-white rounded-xl p-4 border border-beige shadow-sm">
+            <h3 className="text-sm font-bold text-brown-dark mb-3">カテゴリ別 明細</h3>
+            <div className="divide-y divide-beige/50">
+              {categoryData.map((cat, i) => {
+                const isOpen = expandedCats.has(cat.name);
+                const pct = totalAmount > 0 ? Math.round((cat.value / totalAmount) * 100) : 0;
+                const color = COLORS[i % COLORS.length];
+                return (
+                  <div key={cat.name}>
+                    <button
+                      type="button"
+                      onClick={() => toggleExpanded(cat.name)}
+                      className="w-full flex items-center gap-2 py-2.5 text-left hover:bg-cream/40 transition-colors -mx-1 px-1 rounded-lg"
+                    >
+                      <FiChevronRight
+                        className={`text-warm-gray text-sm shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}
+                      />
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                      <span className="text-sm text-brown-dark flex-1 min-w-0 truncate">{cat.name}</span>
+                      <span className="text-xs text-warm-gray shrink-0">{cat.count}件</span>
+                      <span className="text-xs text-warm-gray shrink-0 w-9 text-right">{pct}%</span>
+                      <span className="text-sm font-bold text-brown-dark shrink-0 w-20 text-right">
+                        ¥{formatCurrency(cat.value)}
+                      </span>
+                    </button>
+
+                    {isOpen && (
+                      <div className="pb-2 pl-6 pr-1 space-y-1">
+                        {(expensesByCategory[cat.name] || []).map((e) => (
+                          <div
+                            key={e.id}
+                            className="flex items-center gap-2 text-xs bg-cream/50 rounded-lg px-2.5 py-1.5"
+                          >
+                            <span className="text-warm-gray shrink-0">{e.date}</span>
+                            <span className="px-1.5 py-0.5 rounded-full bg-cream-dark text-brown shrink-0">
+                              {e.payer}
+                            </span>
+                            <span className="text-brown-dark flex-1 min-w-0 truncate">{e.item}</span>
+                            <span className="font-bold text-brown-dark shrink-0 whitespace-nowrap">
+                              ¥{formatCurrency(e.amount)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {/* Payer bar chart */}

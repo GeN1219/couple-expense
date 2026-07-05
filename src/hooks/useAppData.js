@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   getSettings,
   saveSettings,
@@ -8,11 +8,17 @@ import {
   deleteExpense as deleteExpenseStorage,
   toggleSettleExpense as toggleSettleStorage,
   settleExpenses as settleExpensesStorage,
+  getRecurring,
+  addRecurring as addRecurringStorage,
+  updateRecurring as updateRecurringStorage,
+  deleteRecurring as deleteRecurringStorage,
 } from '../utils/storage';
+import { materializeRecurring } from '../utils/recurring';
 
 export function useAppData() {
   const [settings, setSettingsState] = useState(getSettings);
   const [expenses, setExpensesState] = useState(getExpenses);
+  const [recurring, setRecurringState] = useState(getRecurring);
 
   const updateSettings = useCallback((newSettings) => {
     const merged = { ...settings, ...newSettings };
@@ -60,6 +66,34 @@ export function useAppData() {
     );
   }, []);
 
+  const addRecurring = useCallback((rule) => {
+    const newRule = addRecurringStorage(rule);
+    setRecurringState((prev) => [...prev, newRule]);
+    return newRule;
+  }, []);
+
+  const editRecurring = useCallback((id, updates) => {
+    updateRecurringStorage(id, updates);
+    setRecurringState((prev) => prev.map((r) => (r.id === id ? { ...r, ...updates } : r)));
+  }, []);
+
+  const removeRecurring = useCallback((id) => {
+    deleteRecurringStorage(id);
+    setRecurringState((prev) => prev.filter((r) => r.id !== id));
+  }, []);
+
+  // 固定費の自動生成: recurring or expenses が変わったら未生成分を補填
+  const materializing = useRef(false);
+  useEffect(() => {
+    if (materializing.current) return;
+    const toInsert = materializeRecurring(recurring, expenses);
+    if (toInsert.length === 0) return;
+    materializing.current = true;
+    const created = toInsert.map((exp) => addExpenseStorage(exp));
+    setExpensesState((prev) => [...created.reverse(), ...prev]);
+    materializing.current = false;
+  }, [recurring, expenses]);
+
   return {
     settings,
     updateSettings,
@@ -69,5 +103,9 @@ export function useAppData() {
     removeExpense,
     toggleSettle,
     settle,
+    recurring,
+    addRecurring,
+    editRecurring,
+    removeRecurring,
   };
 }

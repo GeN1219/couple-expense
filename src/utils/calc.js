@@ -74,13 +74,14 @@ export function getCategoryData(expenses) {
 
   for (const expense of expenses) {
     if (!catMap[expense.category]) {
-      catMap[expense.category] = 0;
+      catMap[expense.category] = { value: 0, count: 0 };
     }
-    catMap[expense.category] += expense.amount;
+    catMap[expense.category].value += expense.amount;
+    catMap[expense.category].count += 1;
   }
 
   return Object.entries(catMap)
-    .map(([name, value]) => ({ name, value }))
+    .map(([name, { value, count }]) => ({ name, value, count }))
     .sort((a, b) => b.value - a.value);
 }
 

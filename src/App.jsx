@@ -12,6 +12,7 @@ import ExpenseList from './components/ExpenseList';
 import Settlement from './components/Settlement';
 import Charts from './components/Charts';
 import Calendar from './components/Calendar';
+import RecurringExpenses from './components/RecurringExpenses';
 import Settings from './components/Settings';
 import InstallPrompt from './components/InstallPrompt';
 
@@ -67,6 +68,15 @@ function OnlineApp({ auth }) {
             onDelete={data.removeExpense}
           />
         )}
+        {currentTab === 'recurring' && (
+          <RecurringExpenses
+            settings={data.settings}
+            recurring={data.recurring}
+            onAdd={data.addRecurring}
+            onEdit={data.editRecurring}
+            onDelete={data.removeRecurring}
+          />
+        )}
         {currentTab === 'settle' && (
           <Settlement expenses={data.expenses} settings={data.settings} onToggleSettle={data.toggleSettle} onSettle={data.settle} />
         )}
@@ -83,7 +93,7 @@ function OnlineApp({ auth }) {
 
 function OfflineApp() {
   const [currentTab, setCurrentTab] = useState('home');
-  const { settings, updateSettings, expenses, addExpense, editExpense, removeExpense, toggleSettle, settle } = useAppData();
+  const { settings, updateSettings, expenses, addExpense, editExpense, removeExpense, toggleSettle, settle, recurring, addRecurring, editRecurring, removeRecurring } = useAppData();
 
   const handleAdd = (expense) => {
     addExpense(expense);
@@ -117,6 +127,15 @@ function OfflineApp() {
             onAdd={addExpense}
             onEdit={editExpense}
             onDelete={removeExpense}
+          />
+        )}
+        {currentTab === 'recurring' && (
+          <RecurringExpenses
+            settings={settings}
+            recurring={recurring}
+            onAdd={addRecurring}
+            onEdit={editRecurring}
+            onDelete={removeRecurring}
           />
         )}
         {currentTab === 'settle' && (
