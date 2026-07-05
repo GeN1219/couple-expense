@@ -63,12 +63,20 @@ ALTER TABLE group_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 
+-- 再帰回避用ヘルパー: ログインユーザーの所属グループIDを返す。
+-- SECURITY DEFINER で group_members のRLSをバイパスするため、
+-- group_members 自身のポリシーから呼んでも無限再帰にならない。
+CREATE OR REPLACE FUNCTION public.current_user_group_ids()
+RETURNS SETOF uuid
+LANGUAGE sql SECURITY DEFINER STABLE
+SET search_path = public
+AS $$ SELECT group_id FROM public.group_members WHERE user_id = auth.uid() $$;
+
 -- household_groups: メンバーのみ参照可。招待コード検索は誰でも可
+DROP POLICY IF EXISTS "Members can view their groups" ON household_groups;
 CREATE POLICY "Members can view their groups"
   ON household_groups FOR SELECT
-  USING (
-    id IN (SELECT group_id FROM group_members WHERE user_id = auth.uid())
-  );
+  USING (id IN (SELECT current_user_group_ids()));
 
 CREATE POLICY "Authenticated users can create groups"
   ON household_groups FOR INSERT
@@ -79,27 +87,31 @@ CREATE POLICY "Anyone can lookup by invite code"
   ON household_groups FOR SELECT
   USING (true);
 
--- group_members: 同じグループのメンバーのみ
+-- household_groups: メンバーのみグループ名を更新可能
+DROP POLICY IF EXISTS "Members can update their groups" ON household_groups;
+CREATE POLICY "Members can update their groups"
+  ON household_groups FOR UPDATE
+  USING (id IN (SELECT current_user_group_ids()));
+
+-- group_members: 同じグループのメンバーのみ（自己参照を避けるため関数を使用）
+DROP POLICY IF EXISTS "Members can view group members" ON group_members;
 CREATE POLICY "Members can view group members"
   ON group_members FOR SELECT
-  USING (
-    group_id IN (SELECT group_id FROM group_members AS gm WHERE gm.user_id = auth.uid())
-  );
+  USING (group_id IN (SELECT current_user_group_ids()));
 
 CREATE POLICY "Authenticated users can join groups"
   ON group_members FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+-- group_members: 表示名の変更(UPDATE)用
+DROP POLICY IF EXISTS "Members can update group members" ON group_members;
+CREATE POLICY "Members can update group members"
+  ON group_members FOR UPDATE
+  USING (group_id IN (SELECT current_user_group_ids()));
+
 CREATE POLICY "Members can leave groups"
   ON group_members FOR DELETE
   USING (auth.uid() = user_id);
-
--- household_groups: メンバーのみグループ名を更新可能
-CREATE POLICY "Members can update their groups"
-  ON household_groups FOR UPDATE
-  USING (
-    id IN (SELECT group_id FROM group_members WHERE user_id = auth.uid())
-  );
 
 -- expenses: 同グループメンバーのみ CRUD
 CREATE POLICY "Members can view group expenses"
